@@ -12,8 +12,10 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mapbox.services.android.location.LostLocationEngine;
 import com.mapbox.services.android.navigation.testapp.activity.LocationInfoActivity;
 
+import com.mapbox.services.android.navigation.testapp.activity.LostNavigationActivity;
 import com.mapbox.services.android.navigation.testapp.activity.MockNavigationActivity;
 import com.mapbox.services.android.navigation.testapp.activity.OffRouteDetectionActivity;
 import com.mapbox.services.android.navigation.testapp.activity.RerouteActivity;
@@ -45,9 +47,14 @@ public class MainActivity extends AppCompatActivity implements PermissionsListen
         RouteUtilsV5Activity.class
       ),
       new SampleItem(
-        getString(R.string.title_navigation),
-        getString(R.string.description_navigation),
+        getString(R.string.title_mock_navigation),
+        getString(R.string.description_mock_navigation),
         MockNavigationActivity.class
+      ),
+      new SampleItem(
+        getString(R.string.title_lost_navigation),
+        getString(R.string.description_lost_navigation),
+        LostNavigationActivity.class
       ),
       new SampleItem(
         getString(R.string.title_snap_to_route),

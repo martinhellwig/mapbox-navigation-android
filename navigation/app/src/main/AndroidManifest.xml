@@ -28,7 +28,15 @@
 
         <activity
             android:name=".activity.MockNavigationActivity"
-            android:label="@string/title_navigation">
+            android:label="@string/title_mock_navigation">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".MainActivity"/>
+        </activity>
+
+        <activity
+            android:name=".activity.LostNavigationActivity"
+            android:label="@string/title_lost_navigation">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity"/>
@@ -65,7 +73,5 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity"/>
         </activity>
-
     </application>
-
 </manifest>

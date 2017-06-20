@@ -3,12 +3,13 @@ package com.mapbox.services.android.navigation.testapp.activity;
 import android.location.Location;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.support.annotation.Nullable;
 
+import com.mapbox.services.Constants;
 import com.mapbox.services.android.telemetry.location.LocationEngine;
 import com.mapbox.services.android.telemetry.location.LocationEngineListener;
 import com.mapbox.services.api.directions.v5.models.DirectionsRoute;
 import com.mapbox.services.api.utils.turf.TurfConstants;
-import com.mapbox.services.api.utils.turf.TurfException;
 import com.mapbox.services.api.utils.turf.TurfMeasurement;
 import com.mapbox.services.commons.geojson.LineString;
 import com.mapbox.services.commons.models.Position;
@@ -19,8 +20,6 @@ import java.util.Random;
 
 import timber.log.Timber;
 
-import static com.mapbox.services.Constants.PRECISION_6;
-
 /**
  * Allows for mocking user location along a route. The route comes from the directions API and is instance of
  * {@link DirectionsRoute}. Once the route is passed in the mocking is automatically started. It goes step by step
@@ -28,7 +27,7 @@ import static com.mapbox.services.Constants.PRECISION_6;
  * the default values for delay (1 second), speed (30m/h), and noisyGps (false) or you can pass in your own values when
  * constructing this object.
  *
- * @since 2.0.0
+ * @since 2.2.0
  */
 public class MockLocationEngine extends LocationEngine {
 
@@ -39,9 +38,9 @@ public class MockLocationEngine extends LocationEngine {
   private Location lastLocation = new Location(MockLocationEngine.class.getSimpleName());
   private List<LocationEngineListener> listeners;
 
-  private boolean noisyGps = DEFAULT_NOISY_GPS;
-  private int speed = DEFAULT_SPEED;
-  private int delay = DEFAULT_DELAY;
+  private boolean noisyGps;
+  private int speed;
+  private int delay;
 
   private List<Position> positions = new ArrayList<>();
   private Runnable runnable;
@@ -59,10 +58,13 @@ public class MockLocationEngine extends LocationEngine {
   /**
    * Create a {@code MockLocationEngine} instance using the default parameters.
    *
-   * @since 2.0.0
+   * @since 2.2.0
    */
   public MockLocationEngine() {
     listeners = new ArrayList<>();
+    delay = DEFAULT_DELAY;
+    speed = DEFAULT_SPEED;
+    noisyGps = DEFAULT_NOISY_GPS;
   }
 
   /**
@@ -71,7 +73,7 @@ public class MockLocationEngine extends LocationEngine {
    * @param delay    the frequency in which the gps position is updated in milliseconds.
    * @param speed    the speed the user is traveling in miles per hour.
    * @param noisyGps true if you want the mock positions to become noisy.
-   * @since 2.0.0
+   * @since 2.2.0
    */
   public MockLocationEngine(int delay, int speed, boolean noisyGps) {
     listeners = new ArrayList<>();
@@ -87,7 +89,7 @@ public class MockLocationEngine extends LocationEngine {
   /**
    * Connect all the location listeners.
    *
-   * @since 2.0.0
+   * @since 2.2.0
    */
   @Override
   public void activate() {
@@ -100,7 +102,7 @@ public class MockLocationEngine extends LocationEngine {
   /**
    * Stops mocking the user location along the route.
    *
-   * @since 2.0.0
+   * @since 2.2.0
    */
   @Override
   public void deactivate() {
@@ -114,6 +116,7 @@ public class MockLocationEngine extends LocationEngine {
    * While the {@code MockLocationEngine} is in use, you are always connected to it.
    *
    * @return true.
+   * @since 2.2.0
    */
   @Override
   public boolean isConnected() {
@@ -125,23 +128,39 @@ public class MockLocationEngine extends LocationEngine {
    * Mapbox DC office location.
    *
    * @return a {@link Location} which represents the last mock location.
-   * @since 2.0.0
+   * @since 2.2.0
    */
   @Override
+  @Nullable
   public Location getLastLocation() {
     if (lastLocation.getLongitude() != 0 && lastLocation.getLatitude() != 0) {
       return lastLocation;
     } else {
-      lastLocation.setLatitude(41.8529);
-      lastLocation.setLongitude(-87.6900);
-      return lastLocation;
+      return null;
     }
+  }
+
+  public void setLastLocation(Position currentPosition) {
+    lastLocation.setLongitude(currentPosition.getLongitude());
+    lastLocation.setLatitude(currentPosition.getLatitude());
+  }
+
+  public boolean isNoisyGps() {
+    return noisyGps;
+  }
+
+  public int getSpeed() {
+    return speed;
+  }
+
+  public int getDelay() {
+    return delay;
   }
 
   /**
    * Nothing needs to happen here since we are mocking the user location along a route.
    *
-   * @since 2.0.0
+   * @since 2.2.0
    */
   @Override
   public void requestLocationUpdates() {
@@ -151,7 +170,7 @@ public class MockLocationEngine extends LocationEngine {
   /**
    * Removes location updates for the LocationListener.
    *
-   * @since 2.0.0
+   * @since 2.2.0
    */
   @Override
   public void removeLocationUpdates() {
@@ -170,7 +189,7 @@ public class MockLocationEngine extends LocationEngine {
    * @param lineString our route geometry.
    * @param distance   the distance you want to interpolate the line by, by default we calculate the distance using the
    *                   speed variable.
-   * @since 2.0.0
+   * @since 2.2.0
    */
   private void sliceRoute(LineString lineString, double distance) {
     double distanceKm = TurfMeasurement.lineDistance(lineString, TurfConstants.UNIT_KILOMETERS);
@@ -190,10 +209,9 @@ public class MockLocationEngine extends LocationEngine {
    * Emulate a noisy route using this method. Note that some points might not be noisy if the random value produced
    * equals 0.
    *
-   * @throws TurfException occurs when turf fails to calculate either bearing or destination.
-   * @since 2.0.0
+   * @since 2.2.0
    */
-  private void addNoiseToRoute(double distance) throws TurfException {
+  private void addNoiseToRoute(double distance) {
 
     // End point will always match the given route (no noise will be added)
     for (int i = 0; i < positions.size() - 1; i++) {
@@ -213,7 +231,7 @@ public class MockLocationEngine extends LocationEngine {
    * Converts the speed value to km/s and delay to seconds. Then the distance is calculated and returned.
    *
    * @return a double value representing the distance given a speed and time.
-   * @since 2.0.0
+   * @since 2.2.0
    */
   private double calculateDistancePerSec() {
     //speed = 30 Miles/hour * 1.609344km/1mile * 1/60min * 1/60s
@@ -227,8 +245,6 @@ public class MockLocationEngine extends LocationEngine {
     positionList.add(Position.fromLngLat(lastLocation.getLongitude(), lastLocation.getLatitude()));
     positionList.add(position);
 
-    LineString route = LineString.fromCoordinates(positionList);
-
     if (handler != null && runnable != null) {
       handler.removeCallbacks(runnable);
     }
@@ -240,6 +256,8 @@ public class MockLocationEngine extends LocationEngine {
 
     // Calculate the distance which will always be consistent throughout the route.
     distance = calculateDistancePerSec();
+
+    LineString route = LineString.fromCoordinates(positionList);
 
     sliceRoute(route, distance);
     if (noisyGps) {
@@ -253,7 +271,7 @@ public class MockLocationEngine extends LocationEngine {
    * Use this method to pass in a route and start the mocking immediately.
    *
    * @param route a {@link DirectionsRoute} which you'd like to mock the user location on.
-   * @since 2.0.0
+   * @since 2.2.0
    */
   public void setRoute(DirectionsRoute route) {
     this.route = route;
@@ -279,13 +297,12 @@ public class MockLocationEngine extends LocationEngine {
    * Instead of calculating all the points found in the entire route geometry, we go step by step as needed until the
    * route in complete. This resolves a memory issue when long routes are being mocked.
    *
-   * @throws TurfException occurs when turf fails to calculate either bearing or distance.
-   * @since 2.0.0
+   * @since 2.2.0
    */
   private void calculateStepPoints() {
     LineString line = LineString.fromPolyline(
       route.getLegs().get(currentLeg)
-        .getSteps().get(currentStep).getGeometry(), PRECISION_6);
+        .getSteps().get(currentStep).getGeometry(), Constants.PRECISION_6);
 
     if (currentStep < route.getLegs().get(currentLeg).getSteps().size() - 1) {
       currentStep++;
@@ -304,7 +321,7 @@ public class MockLocationEngine extends LocationEngine {
    *
    * @param position taken from the positions list, converts this to a {@link Location}.
    * @return a {@link Location} object with as much information filled in as possible.
-   * @since 2.0.0
+   * @since 2.2.0
    */
   private Location mockLocation(Position position) {
     lastLocation = new Location(MockLocationEngine.class.getName());
@@ -330,7 +347,7 @@ public class MockLocationEngine extends LocationEngine {
   /**
    * A runnable which keeps the user location progressing along the route.
    *
-   * @since 2.0.0
+   * @since 2.2.0
    */
   @SuppressWarnings( {"MissingPermission"})
   private class LocationUpdateRunnable implements Runnable {
@@ -340,7 +357,6 @@ public class MockLocationEngine extends LocationEngine {
         calculateStepPoints();
       }
 
-      Timber.v("current position size representing %d", positions.size());
       if (positions.size() > 0) {
         // Notify of an update
         Location location = mockLocation(positions.get(0));
